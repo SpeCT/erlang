@@ -39,9 +39,13 @@ end
 
 bash 'install-erlang' do
   cwd Chef::Config[:file_cache_path]
+  skip = node['erlang']['source']['skip'] or []
+  skip = skip.map { |x| "echo 'skipping #{x}' > lib/#{x}/SKIP" } * "\n"
   code <<-EOH
     tar -xzf otp_src_#{node['erlang']['source']['version']}.tar.gz
-    (cd otp_src_#{node['erlang']['source']['version']} && ./configure && make && make install)
+    cd otp_src_#{node['erlang']['source']['version']}
+    #{skip}
+    ./configure && make && make install)
   EOH
   action :nothing
   not_if "erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell | grep #{node['erlang']['source']['version']}"
